@@ -1,0 +1,43 @@
+# Name of the workflow displayed in the GitHub Actions UI.
+name: Update MATLAB Project Index
+
+# This workflow is triggered on every push to the 'main' branch.
+# This ensures the project index is updated as soon as new projects are added.
+on:
+  push:
+    branches:
+      - main
+
+# Defines the sequence of tasks to be executed.
+jobs:
+  update-project-index:
+    # Specifies that the job will run on a fresh virtual machine hosted by GitHub.
+    runs-on: ubuntu-latest
+    
+    # Sequence of steps for this job.
+    steps:
+      # 1. Clones the repository's code into the runner.
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # 2. Sets up the specified Python version in the runner's environment.
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      # 3. Executes the Python script to update the README index.
+      #    We will create this script in the next step.
+      - name: Run README update script
+        run: python ./update_matlab_readme.py
+
+      # 4. Checks for changes in the README.md file and, if any,
+      #    commits and pushes them back to the repository.
+      - name: Commit and push if changed
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "docs: 🤖 Automatically update project index"
+          file_pattern: README.md
+          commit_user_name: "GitHub Actions Bot"
+          commit_user_email: "actions@github.com"
+          commit_author: "GitHub Actions Bot <actions@github.com>"

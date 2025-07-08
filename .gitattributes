@@ -1,0 +1,18 @@
+# Set default behavior for Git to automatically detect text files.
+* text=auto
+
+# Force the use of LF (Unix-style) for the most common file types
+# to ensure consistency throughout the repository.
+*.py text eol=lf
+*.js text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.gitignore text eol=lf
+*.gitattributes text eol=lf
+
+# Ensure binary files are not touched (no line ending conversions).
+*.png binary
+*.jpg binary
+*.ico binary

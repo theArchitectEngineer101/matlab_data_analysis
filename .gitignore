@@ -1,0 +1,18 @@
+# MATLAB
+*.asv
+*.bak
+*.log
+*.aux
+*.synctex(busy)
+*.mw*
+/simulink/
+/data/
+/generated/
+/.DS_Store
+.matlab/
+# Excluir pastas de cache e ambiente
+.mex/
+.tmp/
+# Arquivos de configurações de ambiente ou IDEs
+.vscode/
+.idea/
