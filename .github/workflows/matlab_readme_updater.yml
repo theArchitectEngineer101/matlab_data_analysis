@@ -29,7 +29,7 @@ jobs:
       # 3. Executes the Python script to update the README index.
       #    We will create this script in the next step.
       - name: Run README update script
-        run: python ./update_matlab_readme.py
+        run: python ./matlab_readme_updater.py
 
       # 4. Checks for changes in the README.md file and, if any,
       #    commits and pushes them back to the repository.
