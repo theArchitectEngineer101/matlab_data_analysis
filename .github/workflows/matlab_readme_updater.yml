@@ -1,6 +1,9 @@
 # Name of the workflow displayed in the GitHub Actions UI.
 name: Update MATLAB Project Index
 
+permissions:
+  contents: write
+
 # This workflow is triggered on every push to the 'main' branch.
 # This ensures the project index is updated as soon as new projects are added.
 on:
