@@ -9,6 +9,9 @@ The main goal is to provide practical, well-documented tools and examples to exp
 This list is automatically generated and updated to reflect the current projects available in this repository.
 
 <!--START_PROJECTS_LIST-->
+
+* **[Convolution Animation](./convolution_animation/)**: ![MATLAB](https://img.shields.io/badge/MATLAB-0076A8?style=for-the-badge&logo=mathworks&logoColor=white)
+
 <!--END_PROJECTS_LIST-->
 
 ## 🛠️ Core Technology
