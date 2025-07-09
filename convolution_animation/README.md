@@ -1,7 +1,5 @@
 # 🌊 Convolution Animations (Continuous and Discrete) in MATLAB
 
-![MATLAB](https://img.shields.io/badge/MATLAB-0076A8?style=for-the-badge&logo=mathworks&logoColor=white)
-
 This repository contains MATLAB scripts designed to visually demonstrate the step-by-step process of signal convolution, covering both discrete and continuous-time domains. These tools serve as an excellent educational aid for understanding fundamental concepts in Signals and Systems, Digital Signal Processing, and Linear Systems.
 
 ## 🎥 Demonstration
