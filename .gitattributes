@@ -18,4 +18,4 @@
 *.ico binary
 
 # Exclude notebooks from stats
-*.ipynb linguist-vendored
+# *.ipynb linguist-vendored
