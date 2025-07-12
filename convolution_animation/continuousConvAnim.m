@@ -73,7 +73,7 @@ x_entry_signal = [zeros(1, PADDING_SIZE+h_dim) x_entry_signal zeros(1, (PADDING_
 
 h_shifted = circshift(h_inverted, shift_factor);
 
-n = -(h_dim+PADDING_SIZE) :step: x_dim + h_dim + PADDING_SIZE - step;
+n = -(h_dim+PADDING_SIZE) : x_dim + h_dim + PADDING_SIZE - step;
 
 %% Static ploting
 % Entry signal ploting
