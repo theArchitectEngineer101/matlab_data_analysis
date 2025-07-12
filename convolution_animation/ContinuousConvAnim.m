@@ -1,4 +1,4 @@
-function conv_vector = ContinuousConvAnim(x_entry_signal, h_impulse_response)
+function conv_vector = continuousConvAnim(x_entry_signal, h_impulse_response)
 %CONTINUOUS_CONV_ANIM Generates an animation of the continuous convolution process.
 %   This function calculates the convolution between two continuous-time 
 %   signals (represented as sampled vectors) and plots a step-by-step, 
@@ -7,7 +7,7 @@ function conv_vector = ContinuousConvAnim(x_entry_signal, h_impulse_response)
 %   (approximated by a summation) that constitute the convolution integral.
 %
 %   Syntax:
-%       y = continuous_conv_anim(x, h)
+%       y = continuousConvAnim(x, h)
 %
 %   Inputs:
 %       x_entry_signal     - A 1xN row vector representing the sampled

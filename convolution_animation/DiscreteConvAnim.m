@@ -1,4 +1,4 @@
-function conv_vector = DiscreteConvAnim(x_entry_signal, h_impulse_response)
+function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response)
 %DISCRETE_CONV_ANIM Generates an animation of the discrete convolution process.
 %   This function calculates the convolution between two discrete signals
 %   and plots a step-by-step, frame-by-frame animation showing the sliding 
@@ -6,7 +6,7 @@ function conv_vector = DiscreteConvAnim(x_entry_signal, h_impulse_response)
 %   that constitute the convolution operation.
 %
 %   Syntax:
-%       y = discrete_conv_anim(x, h)
+%       y = discreteConvAnim(x, h)
 %
 %   Inputs:
 %       x_entry_signal     - A 1xN row vector representing the discrete 

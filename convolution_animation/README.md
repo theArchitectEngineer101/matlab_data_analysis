@@ -12,9 +12,9 @@ The animation below illustrates the discrete convolution process in action, show
 
 This project includes two main animation scripts:
 
-* **`DiscreteConvAnim.m`**: Animates the discrete convolution of two input signals (`x_entry_signal` and `h_impulse_response`). The animation dynamically displays the signal flipping, shifting, element-wise multiplication, and cumulative summation to form the convoluted output signal.
+* **`discreteConvAnim.m`**: Animates the discrete convolution of two input signals (`x_entry_signal` and `h_impulse_response`). The animation dynamically displays the signal flipping, shifting, element-wise multiplication, and cumulative summation to form the convoluted output signal.
 
-* **`ContinuousConvAnim.m`**: Animates the continuous convolution of two input signals. The process is simulated using discrete samples to visualize the signal flipping, shifting, multiplication, and the integration-like accumulation process that forms the output signal.
+* **`continuousConvAnim.m`**: Animates the continuous convolution of two input signals. The process is simulated using discrete samples to visualize the signal flipping, shifting, multiplication, and the integration-like accumulation process that forms the output signal.
 
 ## ⚙️ Requirements
 
@@ -31,7 +31,7 @@ x_disc = [1 1 1 1]; % Input signal
 h_disc = [0.5 1 0.5];     % Impulse response
 
 % Call the function to start the discrete convolution animation
-conv_result_discrete = DiscreteConvAnim(x_disc, h_disc);
+conv_result_discrete = discreteConvAnim(x_disc, h_disc);
 ```
 
 **Example for Continuous Convolution:**
@@ -41,4 +41,4 @@ x_cont = ones(1, 20); % Input signal
 h_cont = exp(-0.2*(0:19)); % Impulse response
 
 % Call the function to start the continuous convolution animation
-conv_result_continuous = ContinuousConvAnim(x_cont, h_cont);
+conv_result_continuous = continuousConvAnim(x_cont, h_cont);
