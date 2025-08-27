@@ -1,10 +1,16 @@
 clc; clear; close all;
 
-%% Input String
-% This string would come from the user.
-L = input('Informe o comprimento: ');
-input_str = input('Informe a função de carregamento (use o formato q<x-a>^n para os termos):\n', 's');
-fprintf('Input String: %s\n\n', input_str);
+%% User Inputs & Problem Definition
+% Prompt the user to define the beam's physical properties and loads.
+
+% Get the total length of the beam. The input is evaluated as a number.
+L = input('Enter the total beam length (L): ');
+
+% Get the loading function as a string.
+% An example is provided to guide the user on the correct format.
+% The 's' flag ensures the input is treated as literal text.
+prompt_text = 'Enter the loading function (e.g., 10*<x-0>^0 - 50<x-2>^-1):\n';
+input_str = input(prompt_text, 's');
 
 %% Initialization of Result Vectors
 magnitudes = []; % Vector for 'q' values
@@ -60,22 +66,17 @@ for i = 1:length(terms)
         offsets(end+1)    = a;
         exponents(end+1)  = n;
 
-        fprintf('Term %d: q=%.2f, a=%.2f, n=%d -> OK\n', i, q, a, n);
+        fprintf('Term %d: q=%.2f, a=%.2f, n=%d\n', i, q, a, n);
     else
         fprintf('Term %d: "%s" -> SKIPPED (Invalid format)\n', i, current_term);
     end
 end
 
-%% Display Final Results
-fprintf('\n--- Stored Vectors ---\n');
-disp(['Magnitudes (q): ', num2str(magnitudes)]);
-disp(['Offsets (a):    ', num2str(offsets)]);
-disp(['Exponents (n):  ', num2str(exponents)]);
-
-%% 1. Setup for Calculation and Plotting
+%% Setup for Calculation and Plotting
 x = 0:0.001:L; % Create the domain vector for the beam
 
 % Initialize Shear Force (V) and Bending Moment (M) vectors with zeros
+q_plot = zeros(size(x)); % Vetor para a curva das cargas distribuídas
 V = zeros(size(x));
 M = zeros(size(x));
 
@@ -95,6 +96,11 @@ for i = 1:length(magnitudes)
     a = offsets(i);
     n = exponents(i);
 
+    % --- Contribuição para a CURVA de Carregamento (apenas n >= 0) ---
+    if n >= 0
+        q_plot = q_plot + q * singularity(x, a, n);
+    end
+
     % --- Universal Integration Rules ---
     
     % Contribution to Shear (V)
@@ -107,3 +113,74 @@ for i = 1:length(magnitudes)
     m_den = v_den * max(1, m_exp); % The denominators accumulate
     M = M + (q / m_den) * singularity(x, a, m_exp);
 end
+
+% --- Bloco de Plotagem Aprimorado ---
+
+% Invertendo a convenção de sinais (conforme seu código)
+V = -V;
+M = -M;
+
+% Cria o vetor para a linha do eixo zero
+y = zeros(size(x)); 
+
+figure('Name', 'Beam Analysis Diagrams');
+
+% --- Loading Diagram (q) ---
+subplot(3, 1, 1);
+% Plota a curva das cargas distribuídas
+plot(x, q_plot, 'b', 'LineWidth', 1.5);
+hold on;
+plot(x, y, 'k--');
+grid on;
+title('Loading Diagram');
+ylabel('Load (N)');
+fill([x, fliplr(x)], [q_plot, fliplr(y)], 'b', 'FaceAlpha', 0.3, 'EdgeColor', 'none');
+% Agora, adiciona as forças e momentos concentrados
+for i = 1:length(magnitudes)
+    q = magnitudes(i);
+    a = offsets(i);
+    n = exponents(i);
+    
+    if n == -1 % Força Pontual
+        if q > 0 % Seta para cima
+            plot([a, a], [-0.1*max(abs(ylim)), 0], 'b', 'LineWidth', 1.5);
+            plot(a, -0.1*max(abs(ylim)), 'b^', 'MarkerFaceColor', 'b', 'MarkerSize', 8);
+        else % Seta para baixo
+            plot([a, a], [0.1*max(abs(ylim)), 0], 'r', 'LineWidth', 1.5);
+            plot(a, 0.1*max(abs(ylim)), 'rv', 'MarkerFaceColor', 'r', 'MarkerSize', 8);
+        end
+        text(a, -8, sprintf('%.1f', q), 'HorizontalAlignment', 'center');
+    elseif n == -2 % Momento Concentrado
+        if q > 0 % Anti-horário
+            text(a, 0.1*max(abs(ylim)), '\circlearrowleft', 'Color', 'g', 'FontSize', 16, 'HorizontalAlignment', 'center', 'FontWeight', 'bold', 'Interpreter', 'latex');
+        else % Horário
+            text(a, 0.1*max(abs(ylim)), '\circlearrowright', 'Color', 'g', 'FontSize', 16, 'HorizontalAlignment', 'center', 'FontWeight', 'bold', 'Interpreter', 'latex');
+        end
+        text(a, -0.2*max(abs(ylim)), sprintf('M=%.1f', q), 'HorizontalAlignment', 'center');
+    end
+end
+hold off;
+
+% Shear Force Diagram
+subplot(3, 1, 2);
+plot(x, V, 'm', 'LineWidth', 1.5);
+hold on;
+plot(x, y, 'k--');
+grid on;
+title('Shear Force Diagram');
+ylabel('Shear Force (N)');
+xlabel('Position (x)');
+fill([x, fliplr(x)], [V, fliplr(y)], 'm', 'FaceAlpha', 0.3, 'EdgeColor', 'none');
+hold off;
+
+% Bending Moment Diagram
+subplot(3, 1, 3);
+plot(x, M, 'r', 'LineWidth', 1.5); % Cor vermelha para diferenciar
+hold on;
+plot(x, y, 'k--');
+grid on;
+title('Bending Moment Diagram');
+ylabel('Bending Moment (Nm)');
+xlabel('Position (x)');
+fill([x, fliplr(x)], [M, fliplr(y)], 'r', 'FaceAlpha', 0.3, 'EdgeColor', 'none');
+hold off;
