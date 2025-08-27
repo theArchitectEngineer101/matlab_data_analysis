@@ -11,6 +11,7 @@ This list is automatically generated and updated to reflect the current projects
 <!--START_PROJECTS_LIST-->
 
 * **[Convolution Animation](./convolution_animation/)**: This repository contains MATLAB scripts designed to visually demonstrate the step-by-step process of signal convolution, covering both discrete and continuous-time domains. These tools serve as an excellent educational aid for understanding fundamental concepts in Signals and Systems, Digital Signal Processing, and Linear Systems.
+* **[Shear Moment Diagrammer](./shear_moment_diagrammer/)**
 
 <!--END_PROJECTS_LIST-->
 
