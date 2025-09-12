@@ -50,16 +50,16 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
     PADDING_SIZE = 5;
 
     % On-screen animation pauses (in seconds)
-    pause_before_inversion = 4;
-    pause_before_shifting  = 2;
+    pause_before_inversion = 2;
+    pause_before_shifting  = 1;
     pause_after_shifting   = 1;
-    pause_iteration        = 0.8;
-    pause_finale           = 4;
+    pause_iteration        = 0.9;
+    pause_finale           = 2;
 
     % Video settings are initialized here if requested
     if generate_video
         v = VideoWriter(video_filename, 'MPEG-4');
-        v.FrameRate = 2;   % Low FPS for clear, step-by-step viewing
+        v.FrameRate = 30;   % Low FPS for clear, step-by-step viewing
         v.Quality   = 100; % Maximum quality for presentation
         open(v);
     end
@@ -112,7 +112,7 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
     %% Static ploting
     % Create and configure the main figure window
     fig = figure;
-    set(fig, 'Position', [100, 50, 1080, 1350]); % Set to vertical HD
+    set(fig, 'Position', [100, 50, 720, 900]); % Set to vertical HD
 
     % Entry signal ploting
     subplot(4,1,1)
@@ -163,8 +163,11 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
         pause(pause_after_shifting);
     end
 
+    total_iterations = length(n) - h_dim;
+    snapshot_iteration = round(total_iterations / 2);
+
     %% Animation loop
-    for ii = 1:length(n)-h_dim
+    for ii = 1:total_iterations
         
         % Shifting inverted impulse response
         h_shifted = circshift(h_shifted, 1);
@@ -189,9 +192,24 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
 
         drawnow;
 
+        if ii == snapshot_iteration
+            % Define the snapshot filename based on the video filename
+            if generate_video
+                [~, name, ~] = fileparts(video_filename);
+                snapshot_filename = ['snapshot_' name '.png'];
+            else
+                snapshot_filename = 'snapshot_animation.png';
+            end
+            
+            print(fig, snapshot_filename, '-dpng', '-r300'); % Save at 300 DPI
+            disp(['High-resolution snapshot saved as: ' snapshot_filename]);
+        end
+
         if generate_video
             frame = getframe(fig);
-            writeVideo(v, frame);
+            for i = 1:6
+                writeVideo(v, frame);
+            end
         else
             % Only pause if not generating video, to allow faster rendering
             pause(pause_iteration);

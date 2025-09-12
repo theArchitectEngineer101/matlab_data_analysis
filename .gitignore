@@ -10,9 +10,14 @@
 /generated/
 /.DS_Store
 .matlab/
-# Excluir pastas de cache e ambiente
+
+# Media and output files
+*.mp4
+
+# Exclude cache and environment folders
 .mex/
 .tmp/
-# Arquivos de configurações de ambiente ou IDEs
+
+# Environment or IDE configuration files
 .vscode/
 .idea/
