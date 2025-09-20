@@ -22,58 +22,44 @@
 %       conv_vector        - A 1x(N+M-1) row vector containing the full
 %                            result of the convolution y[n] = x[n] * h[n].
 %
-% EXAMPLE 1: On-screen Animation
-%       % Define a rectangular input signal and an impulse response
-%       x_signal = [1, 1, 1, 1];
-%       h_response = [0.5, 1];
-%       y = discreteConvAnim(x_signal, h_response);
-%
-% EXAMPLE 2: Save Animation to MP4
-%       x_signal = [1, 1, 1, 1];
-%       h_response = [0.5, 1];
-%       y = discreteConvAnim(x_signal, h_response, 'rect_conv.mp4');
-%
 % SEE ALSO:
-%       conv, stem, VideoWriter, getframe, circshift, drawnow
+%       conv, stem, stemPloter, recordFrame, VideoWriter, getframe, set
 %
 % Author: theArchitectEngineer101
-% Date: 26-Aug-2025
-% Version: 2.0
+% Date: 20-Sep-2025
+% Version: 3.0 - Optimized animation loop using Handle Graphics.
 
 function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, video_filename)
 
     %% Configuration and Setup
-    % Check if video generation is requested
-    generate_video = nargin > 2 && ~isempty(video_filename);
-
     % Animation and Padding Parameters
     PADDING_SIZE = 5;
-
     % On-screen animation pauses (in seconds)
     pause_before_inversion = 2;
     pause_before_shifting  = 1;
     pause_after_shifting   = 1;
-    pause_iteration        = 0.9;
+    pause_iteration        = 0.3;
     pause_finale           = 2;
 
-    % Video settings are initialized here if requested
+    % Check if video generation is requested
+    generate_video = nargin > 2 && ~isempty(video_filename);
+    % Video settings
+    video_obj = [];
     if generate_video
         v = VideoWriter(video_filename, 'MPEG-4');
-        v.FrameRate = 30;   % Low FPS for clear, step-by-step viewing
-        v.Quality   = 100; % Maximum quality for presentation
+        v.FrameRate = 30;
+        v.Quality   = 100;
         open(v);
+        video_obj = v;
     end
 
     %% Core Computations and Signal Preparation
-    % Perform the full convolution to get the final result vector
     conv_vector = conv(x_entry_signal, h_impulse_response);
     x_dim = length(x_entry_signal);
     h_dim = length(h_impulse_response);
-
-    % Time-reverse the impulse response h[n] to get h[-n]
     h_inverted = flip(h_impulse_response);
 
-    % Add zero-padding to signals for full animation visibility
+    % Zero-padding for full animation visibility
     if x_dim <= h_dim
         h_inverted = [zeros(1, PADDING_SIZE + h_dim) h_inverted zeros(1, PADDING_SIZE + x_dim)];
         h_padded = [zeros(1, PADDING_SIZE + h_dim) h_impulse_response zeros(1, PADDING_SIZE + x_dim)];
@@ -83,7 +69,7 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
         h_padded = [zeros(1, PADDING_SIZE + h_dim) h_impulse_response zeros(1, PADDING_SIZE + x_dim)];
         shift_factor = x_dim + h_dim + PADDING_SIZE;
     end
-    x_entry_signal = [zeros(1, PADDING_SIZE+h_dim) x_entry_signal zeros(1, (PADDING_SIZE + h_dim))];
+    x_padded = [zeros(1, PADDING_SIZE+h_dim) x_entry_signal zeros(1, (PADDING_SIZE + h_dim))];
 
     % Create the discrete time axis 'n' for plotting
     n = -(h_dim+PADDING_SIZE) : x_dim + h_dim + PADDING_SIZE - 1;
@@ -91,144 +77,74 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
     % Initialize animation vectors
     h_shifted   = circshift(h_inverted, shift_factor); % Initial position of h[n-k]
     convolution = zeros(1, length(n));
+    mult_factor = zeros(1, length(n));
 
     %% Dynamic Range Calculation for Plots
-    % Entry signal graph limits
-    y_limit_sup_entry = max(x_entry_signal);
-    y_limit_inf_entry = min([0 x_entry_signal]);
-
-    % Impulse response graph limits
+    y_limit_sup_entry = max(x_padded);
+    y_limit_inf_entry = min([0 x_padded]);
     y_limit_sup_resp = max(h_impulse_response);
     y_limit_inf_resp = min([0 h_impulse_response]);
-
-    % Mult_factor graph limits
     y_limit_sup_mult = max(x_entry_signal)*max(h_impulse_response);
     y_limit_inf_mult = min([0 min(x_entry_signal)*max(h_impulse_response) max(x_entry_signal)*min(h_impulse_response)]);
-
-    % Convolution graph limits
     y_limit_sup_conv = max(conv_vector);
     y_limit_inf_conv = min([0 conv_vector]);
 
-    %% Static ploting
+    %% Graphics Initialization
     % Create and configure the main figure window
     fig = figure;
     set(fig, 'Position', [100, 50, 720, 900]); % Set to vertical HD
 
     % Entry signal ploting
     subplot(4,1,1)
-    stemPloter(n, x_entry_signal, y_limit_inf_entry, y_limit_sup_entry, 'Input Signal: x[n]', 'n', 'Amplitude', 'b')
+    stemPloter(n, x_padded, y_limit_inf_entry, y_limit_sup_entry, 'Input Signal: x[n]', 'n', 'Amplitude', 'b');
 
-    % Impulse response ploting
+    % Initialize Animated Plots and Get Handles
     subplot(4,1,2);
-    stemPloter(n, h_padded, y_limit_inf_resp, y_limit_sup_resp, 'Impulse Response: h[n]', 'n', 'Amplitude', 'b')
+    h_plot_handle = stemPloter(n, h_padded, y_limit_inf_resp, y_limit_sup_resp, 'Impulse Response: h[n]', 'n', 'Amplitude', 'b');
+    subplot(4,1,3);
+    mult_plot_handle = stemPloter(n, mult_factor, y_limit_inf_mult, y_limit_sup_mult, 'Point-wise Product', 'n', 'Amplitude', 'm');
+    subplot(4,1,4);
+    conv_plot_handle = stemPloter(n, convolution, y_limit_inf_conv, y_limit_sup_conv, 'Convolution Result: y[n]', 'n', 'Amplitude', 'r');
 
-    if generate_video
-        num_frames_pause = pause_before_inversion * v.FrameRate;
-        frame = getframe(fig);
-        for i = 1:num_frames_pause
-            writeVideo(v, frame);
-        end
-    else
-        % Only pause if not generating video, to allow faster rendering
-        pause(pause_before_inversion);
-    end
+    %% Initial Animation Steps (Before Loop)
+    recordFrame(fig, video_obj, pause_before_inversion);
 
-    % Inverted impulse response ploting
-    subplot(4,1,2);
-    stemPloter(n, h_inverted, y_limit_inf_resp, y_limit_sup_resp, 'Flipped Response: h[-n]', 'n', 'Amplitude', 'b')
+    % Update h[n] to h[-n]
+    set(h_plot_handle, 'YData', h_inverted);
+    title(subplot(4,1,2), 'Flipped Response: h[-n]');
+    recordFrame(fig, video_obj, pause_before_shifting);
 
-    if generate_video
-        num_frames_pause = pause_before_shifting * v.FrameRate;
-        frame = getframe(fig);
-        for i = 1:num_frames_pause
-            writeVideo(v, frame);
-        end
-    else
-        % Only pause if not generating video, to allow faster rendering
-        pause(pause_before_shifting);
-    end
+    % Update h[-n] to h[n-k] (initial position)
+    set(h_plot_handle, 'YData', h_shifted);
+    title(subplot(4,1,2), 'Shifted Response: h[n-k]');
+    recordFrame(fig, video_obj, pause_after_shifting);
 
-    % Shifted impulse response ploting
-    subplot(4,1,2);
-    stemPloter(n, h_shifted, y_limit_inf_resp, y_limit_sup_resp, 'Shifted Response: h[n-k]', 'n', 'Amplitude', 'b')
 
-    if generate_video
-        num_frames_pause = pause_after_shifting * v.FrameRate;
-        frame = getframe(fig);
-        for i = 1:num_frames_pause
-            writeVideo(v, frame);
-        end
-    else
-        % Only pause if not generating video, to allow faster rendering
-        pause(pause_after_shifting);
-    end
-
-    total_iterations = length(n) - h_dim;
-    snapshot_iteration = round(total_iterations / 2);
 
     %% Animation loop
-    for ii = 1:total_iterations
-        
-        % Shifting inverted impulse response
+    for ii = 1:length(n) - h_dim
+        % Update signal data
         h_shifted = circshift(h_shifted, 1);
-
-        % Multiplication factor calculation
-        mult_factor = x_entry_signal.*h_shifted;
-
-        % Convolution iterated calculation
+        mult_factor = x_padded.*h_shifted;
         convolution(ii+h_dim) = sum(mult_factor);
 
-        % Shifted impulse response ploting
-        subplot(4,1,2);
-        stemPloter(n, h_shifted, y_limit_inf_resp, y_limit_sup_resp, 'Shifted Response: h[n-k]', 'n', 'Amplitude', 'b')
-
-        % Multiplication factor ploting
-        subplot(4,1,3);
-        stemPloter(n, mult_factor, y_limit_inf_mult, y_limit_sup_mult, 'Point-wise Product', 'n', 'Amplitude', 'm')
-
-        % Convolution ploting
-        subplot(4,1,4);
-        stemPloter(n, convolution, y_limit_inf_conv, y_limit_sup_conv, 'Convolution Result: y[n]', 'n', 'Amplitude', 'r')
+        % Update plot data using handles
+        set(h_plot_handle, 'YData', h_shifted);
+        set(mult_plot_handle, 'YData', mult_factor);
+        set(conv_plot_handle, 'YData', convolution);
 
         drawnow;
 
-        if ii == snapshot_iteration
-            % Define the snapshot filename based on the video filename
-            if generate_video
-                [~, name, ~] = fileparts(video_filename);
-                snapshot_filename = ['snapshot_' name '.png'];
-            else
-                snapshot_filename = 'snapshot_animation.png';
-            end
-            
-            print(fig, snapshot_filename, '-dpng', '-r300'); % Save at 300 DPI
-            disp(['High-resolution snapshot saved as: ' snapshot_filename]);
-        end
-
-        if generate_video
-            frame = getframe(fig);
-            for i = 1:6
-                writeVideo(v, frame);
-            end
-        else
-            % Only pause if not generating video, to allow faster rendering
-            pause(pause_iteration);
-        end
+        % Record frame or pause
+        recordFrame(fig, video_obj, pause_iteration);
     end
 
-    if generate_video
-        num_frames_pause = pause_finale * v.FrameRate;
-        frame = getframe(fig);
-        for i = 1:num_frames_pause
-            writeVideo(v, frame);
-        end
-    else
-        % Only pause if not generating video, to allow faster rendering
-        pause(pause_finale);
-    end
+    % Hold the final frame
+    recordFrame(fig, video_obj, pause_finale);
 
+    % Finalize video if generated
     if generate_video
-        close(v);
+        close(video_obj);
         disp(['Video successfully saved: ' video_filename]);
     end
 

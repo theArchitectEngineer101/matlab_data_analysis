@@ -1,4 +1,6 @@
 % stemPloter A helper function to create and format a customized stem plot.
+%   This function initializes a stem plot and returns its handle for future
+%   updates, enabling efficient animation.
 %
 % SYNTAX:
 %   stemPloter(x, y, y_lim_inf, y_lim_sup, plot_title, x_label, y_label, color)
@@ -12,11 +14,14 @@
 %   x_label    - String for the x-axis label.
 %   y_label    - String for the y-axis label.
 %   color      - Character or string for the plot color.
+%
+% OUTPUTS:
+%   stem_handle - The handle to the created stem series object.
 
-function stemPloter(x, y, y_lim_inf, y_lim_sup, plot_title, x_label, y_label, color)
+function stem_handle = stemPloter(x, y, y_lim_inf, y_lim_sup, plot_title, x_label, y_label, color)
 
     % Create the main stem plot with specified color and line width.
-    stem(x, y, color, 'LineWidth', 2);
+    stem_handle = stem(x, y, color, 'LineWidth', 2);
 
     % Set the horizontal axis limits to fit the data perfectly.
     xlim([min(x) max(x)]);
