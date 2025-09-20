@@ -1,19 +1,19 @@
-%RECORDFRAME Captures a frame for animation or pauses execution.
+% videoRecorder Captures a frame for animation or pauses execution.
 %   This helper function decides whether to write a frame to a video object
 %   or to pause the MATLAB execution based on whether a video object is
 %   provided.
 %
-%   SYNTAX:
-%       recordFrame(fig_handle, video_obj, duration_sec)
+% SYNTAX:
+%   videoRecorder(fig_handle, video_obj, duration_sec)
 %
-%   INPUTS:
-%       fig_handle   - The handle to the figure to be captured.
-%       video_obj    - A VideoWriter object. If this is empty ([]), the
-%                      function will pause instead of recording.
-%       duration_sec - The duration in seconds for the pause or for how
-%                      long the frame should be held in the video.
+% INPUTS:
+%   fig_handle   - The handle to the figure to be captured.
+%   video_obj    - A VideoWriter object. If this is empty ([]), the
+%                  function will pause instead of recording.
+%   duration_sec - The duration in seconds for the pause or for how
+%                  long the frame should be held in the video.
 
-function recordFrame(fig_handle, video_obj, duration_sec)
+function videoRecorder(fig_handle, video_obj, duration_sec)
 
     % Check if a valid VideoWriter object was provided
     if ~isempty(video_obj)

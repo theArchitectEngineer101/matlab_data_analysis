@@ -1,39 +1,34 @@
 % discreteConvAnim GENERATES AN ANIMATION OF THE DISCRETE CONVOLUTION PROCESS.
 %   This function calculates the convolution between two discrete signals
-%   and plots a step-by-step animation of the operation. The animation can
-%   be displayed on screen or saved to a high-quality MP4 video file.
+%   and plots a step-by-step animation. The animation can be saved as a
+%   high-quality MP4 video and/or an animated GIF.
 %
 % SYNTAX:
 %       conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response)
 %       conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, video_filename)
+%       conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, video_filename, gif_filename)
 %
 % INPUTS:
-%       x_entry_signal     - A 1xN row vector representing the discrete
-%                            input signal x[n].
-%       h_impulse_response - A 1xM row vector representing the discrete
-%                            impulse response h[n].
-%       video_filename     - (Optional) A string containing the desired
-%                            output file name (e.g., 'animation.mp4'). If
-%                            provided, the function saves the animation as
-%                            a video file instead of pausing for on-screen
-%                            viewing.
+%       x_entry_signal     - A 1xN row vector for the input signal x[n].
+%       h_impulse_response - A 1xM row vector for the impulse response h[n].
+%       video_filename     - (Optional) String for the output MP4 filename. Use [] to skip.
+%       gif_filename       - (Optional) String for the output GIF filename.
 %
 % OUTPUTS:
-%       conv_vector        - A 1x(N+M-1) row vector containing the full
-%                            result of the convolution y[n] = x[n] * h[n].
+%       conv_vector        - A 1x(N+M-1) row vector with the convolution result.
 %
 % SEE ALSO:
-%       conv, stem, stemPloter, recordFrame, VideoWriter, getframe, set
+%       conv, stem, stemPloter, videoRecorder, gifRecorder, VideoWriter
 %
 % Author: theArchitectEngineer101
 % Date: 20-Sep-2025
-% Version: 3.0 - Optimized animation loop using Handle Graphics.
+% Version: 4.0 - Implemented GIF generation.
 
-function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, video_filename)
+function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, video_filename, gif_filename)
 
     %% Configuration and Setup
     % Animation and Padding Parameters
-    PADDING_SIZE = 5;
+    PADDING_SIZE           = 5;
     % On-screen animation pauses (in seconds)
     pause_before_inversion = 2;
     pause_before_shifting  = 1;
@@ -41,10 +36,13 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
     pause_iteration        = 0.3;
     pause_finale           = 2;
 
-    % Check if video generation is requested
-    generate_video = nargin > 2 && ~isempty(video_filename);
+    % Handle optional arguments to prevent errors
+    if nargin < 3, video_filename = []; end
+    if nargin < 4, gif_filename = []; end
+
     % Video settings
     video_obj = [];
+    generate_video = ~isempty(video_filename);
     if generate_video
         v = VideoWriter(video_filename, 'MPEG-4');
         v.FrameRate = 30;
@@ -52,6 +50,9 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
         open(v);
         video_obj = v;
     end
+
+    % Reset GIF recorder state for new animations
+    gifRecorder('reset');
 
     %% Core Computations and Signal Preparation
     conv_vector = conv(x_entry_signal, h_impulse_response);
@@ -107,22 +108,25 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
     conv_plot_handle = stemPloter(n, convolution, y_limit_inf_conv, y_limit_sup_conv, 'Convolution Result: y[n]', 'n', 'Amplitude', 'r');
 
     %% Initial Animation Steps (Before Loop)
-    recordFrame(fig, video_obj, pause_before_inversion);
+    videoRecorder(fig, video_obj, pause_before_inversion);
+    gifRecorder(fig, gif_filename, pause_before_inversion);
 
     % Update h[n] to h[-n]
     set(h_plot_handle, 'YData', h_inverted);
     title(subplot(4,1,2), 'Flipped Response: h[-n]');
-    recordFrame(fig, video_obj, pause_before_shifting);
+    videoRecorder(fig, video_obj, pause_before_shifting);
+    gifRecorder(fig, gif_filename, pause_before_shifting);
 
     % Update h[-n] to h[n-k] (initial position)
     set(h_plot_handle, 'YData', h_shifted);
     title(subplot(4,1,2), 'Shifted Response: h[n-k]');
-    recordFrame(fig, video_obj, pause_after_shifting);
+    videoRecorder(fig, video_obj, pause_after_shifting);
+    gifRecorder(fig, gif_filename, pause_after_shifting);
 
-
+    total_iterations = length(n) - h_dim;
 
     %% Animation loop
-    for ii = 1:length(n) - h_dim
+    for ii = 1:total_iterations
         % Update signal data
         h_shifted = circshift(h_shifted, 1);
         mult_factor = x_padded.*h_shifted;
@@ -136,16 +140,21 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
         drawnow;
 
         % Record frame or pause
-        recordFrame(fig, video_obj, pause_iteration);
+        videoRecorder(fig, video_obj, pause_iteration);
+        gifRecorder(fig, gif_filename, pause_iteration);
     end
 
     % Hold the final frame
-    recordFrame(fig, video_obj, pause_finale);
+    videoRecorder(fig, video_obj, pause_finale);
+    gifRecorder(fig, gif_filename, pause_finale);
 
     % Finalize video if generated
     if generate_video
         close(video_obj);
         disp(['Video successfully saved: ' video_filename]);
+    end
+    if ~isempty(gif_filename)
+        disp(['GIF successfully saved: ' gif_filename]);
     end
 
 end
