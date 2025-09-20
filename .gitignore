@@ -13,6 +13,8 @@
 
 # Media and output files
 *.mp4
+*.gif
+*.png
 
 # Exclude cache and environment folders
 .mex/

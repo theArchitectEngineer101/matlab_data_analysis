@@ -22,9 +22,9 @@
 %
 % Author: theArchitectEngineer101
 % Date: 20-Sep-2025
-% Version: 4.0 - Implemented GIF generation.
+% Version: 5.0 - Implemented time-based multi-GIF generation.
 
-function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, video_filename, gif_filename)
+function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, video_filename, gif_intervals)
 
     %% Configuration and Setup
     % Animation and Padding Parameters
@@ -38,7 +38,7 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
 
     % Handle optional arguments to prevent errors
     if nargin < 3, video_filename = []; end
-    if nargin < 4, gif_filename = []; end
+    if nargin < 4, gif_intervals = []; end
 
     % Video settings
     video_obj = [];
@@ -56,21 +56,21 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
 
     %% Core Computations and Signal Preparation
     conv_vector = conv(x_entry_signal, h_impulse_response);
-    x_dim = length(x_entry_signal);
-    h_dim = length(h_impulse_response);
-    h_inverted = flip(h_impulse_response);
+    x_dim       = length(x_entry_signal);
+    h_dim       = length(h_impulse_response);
+    h_inverted  = flip(h_impulse_response);
 
     % Zero-padding for full animation visibility
     if x_dim <= h_dim
-        h_inverted = [zeros(1, PADDING_SIZE + h_dim) h_inverted zeros(1, PADDING_SIZE + x_dim)];
-        h_padded = [zeros(1, PADDING_SIZE + h_dim) h_impulse_response zeros(1, PADDING_SIZE + x_dim)];
+        h_inverted   = [zeros(1, PADDING_SIZE + h_dim)  h_inverted          zeros(1, PADDING_SIZE + x_dim)];
+        h_padded     = [zeros(1, PADDING_SIZE + h_dim)  h_impulse_response  zeros(1, PADDING_SIZE + x_dim)];
         shift_factor = h_dim + x_dim + PADDING_SIZE;
     else
-        h_inverted = [zeros(1, PADDING_SIZE + h_dim) h_inverted zeros(1, PADDING_SIZE + x_dim)];
-        h_padded = [zeros(1, PADDING_SIZE + h_dim) h_impulse_response zeros(1, PADDING_SIZE + x_dim)];
+        h_inverted   = [zeros(1, PADDING_SIZE + h_dim)  h_inverted          zeros(1, PADDING_SIZE + x_dim)];
+        h_padded     = [zeros(1, PADDING_SIZE + h_dim)  h_impulse_response  zeros(1, PADDING_SIZE + x_dim)];
         shift_factor = x_dim + h_dim + PADDING_SIZE;
     end
-    x_padded = [zeros(1, PADDING_SIZE+h_dim) x_entry_signal zeros(1, (PADDING_SIZE + h_dim))];
+    x_padded         = [zeros(1, PADDING_SIZE+h_dim)    x_entry_signal      zeros(1, PADDING_SIZE + h_dim)];
 
     % Create the discrete time axis 'n' for plotting
     n = -(h_dim+PADDING_SIZE) : x_dim + h_dim + PADDING_SIZE - 1;
@@ -83,12 +83,18 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
     %% Dynamic Range Calculation for Plots
     y_limit_sup_entry = max(x_padded);
     y_limit_inf_entry = min([0 x_padded]);
-    y_limit_sup_resp = max(h_impulse_response);
-    y_limit_inf_resp = min([0 h_impulse_response]);
-    y_limit_sup_mult = max(x_entry_signal)*max(h_impulse_response);
-    y_limit_inf_mult = min([0 min(x_entry_signal)*max(h_impulse_response) max(x_entry_signal)*min(h_impulse_response)]);
-    y_limit_sup_conv = max(conv_vector);
-    y_limit_inf_conv = min([0 conv_vector]);
+    y_limit_sup_resp  = max(h_impulse_response);
+    y_limit_inf_resp  = min([0 h_impulse_response]);
+    y_limit_sup_mult  = max(x_entry_signal)*max(h_impulse_response);
+    y_limit_inf_mult  = min([0 min(x_entry_signal)*max(h_impulse_response) max(x_entry_signal)*min(h_impulse_response)]);
+    y_limit_sup_conv  = max(conv_vector);
+    y_limit_inf_conv  = min([0 conv_vector]);
+
+    total_iterations = length(n) - h_dim;
+    total_animation_time = pause_iteration * total_iterations + ...
+                           pause_before_inversion + pause_before_shifting + ...
+                           pause_after_shifting + pause_finale;
+    elapsed_time = 0;
 
     %% Graphics Initialization
     % Create and configure the main figure window
@@ -101,29 +107,48 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
 
     % Initialize Animated Plots and Get Handles
     subplot(4,1,2);
-    h_plot_handle = stemPloter(n, h_padded, y_limit_inf_resp, y_limit_sup_resp, 'Impulse Response: h[n]', 'n', 'Amplitude', 'b');
+    h_plot_handle    = stemPloter(n, h_padded, y_limit_inf_resp, y_limit_sup_resp, 'Impulse Response: h[n]', 'n', 'Amplitude', 'b');
     subplot(4,1,3);
     mult_plot_handle = stemPloter(n, mult_factor, y_limit_inf_mult, y_limit_sup_mult, 'Point-wise Product', 'n', 'Amplitude', 'm');
     subplot(4,1,4);
     conv_plot_handle = stemPloter(n, convolution, y_limit_inf_conv, y_limit_sup_conv, 'Convolution Result: y[n]', 'n', 'Amplitude', 'r');
 
+    %% Helper function for recording to keep the main loop clean
+    function framesRecorder(duration)
+        videoRecorder(fig, video_obj, duration);
+        
+        % Determine which GIFs to record in this frame
+        gifs_to_record_this_frame = {};
+        if ~isempty(gif_intervals)
+            current_progress_time = elapsed_time / total_animation_time;
+            for k = 1:size(gif_intervals, 1)
+                if current_progress_time >= gif_intervals(k, 1) && current_progress_time < gif_intervals(k, 2)
+                    gif_base_name = 'animation_interval';
+                    if ~isempty(video_filename)
+                       [~, name, ~] = fileparts(video_filename);
+                       gif_base_name = name;
+                    end
+                    gifs_to_record_this_frame{end+1} = sprintf('%s_%d', gif_base_name, k);
+                end
+            end
+        end
+        gifRecorder(fig, gifs_to_record_this_frame, duration);
+        
+        elapsed_time = elapsed_time + duration;
+    end  
+
     %% Initial Animation Steps (Before Loop)
-    videoRecorder(fig, video_obj, pause_before_inversion);
-    gifRecorder(fig, gif_filename, pause_before_inversion);
+    framesRecorder(pause_before_inversion);
 
     % Update h[n] to h[-n]
     set(h_plot_handle, 'YData', h_inverted);
     title(subplot(4,1,2), 'Flipped Response: h[-n]');
-    videoRecorder(fig, video_obj, pause_before_shifting);
-    gifRecorder(fig, gif_filename, pause_before_shifting);
+    framesRecorder(pause_before_shifting);
 
     % Update h[-n] to h[n-k] (initial position)
     set(h_plot_handle, 'YData', h_shifted);
     title(subplot(4,1,2), 'Shifted Response: h[n-k]');
-    videoRecorder(fig, video_obj, pause_after_shifting);
-    gifRecorder(fig, gif_filename, pause_after_shifting);
-
-    total_iterations = length(n) - h_dim;
+    framesRecorder(pause_after_shifting);
 
     %% Animation loop
     for ii = 1:total_iterations
@@ -140,21 +165,26 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
         drawnow;
 
         % Record frame or pause
-        videoRecorder(fig, video_obj, pause_iteration);
-        gifRecorder(fig, gif_filename, pause_iteration);
+        framesRecorder(pause_iteration);
     end
 
     % Hold the final frame
-    videoRecorder(fig, video_obj, pause_finale);
-    gifRecorder(fig, gif_filename, pause_finale);
+    framesRecorder(pause_finale);
 
-    % Finalize video if generated
+    % Finalize media
     if generate_video
         close(video_obj);
-        disp(['Video successfully saved: ' video_filename]);
+        disp(['Video successfully saved: ' video_filename '.mp4']);
     end
-    if ~isempty(gif_filename)
-        disp(['GIF successfully saved: ' gif_filename]);
+    if ~isempty(gif_intervals)
+         for j = 1:size(gif_intervals, 1)
+            gif_base_name = 'animation_interval';
+            if ~isempty(video_filename)
+               [~, name, ~] = fileparts(video_filename);
+               gif_base_name = name;
+            end
+            disp(['GIF successfully saved:   ' sprintf('%s_%d.gif', gif_base_name, j)]);
+         end
     end
 
 end
