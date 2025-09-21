@@ -60,7 +60,7 @@ function snapshotRecorder(fig_handle, base_filename, current_progress, snap_poin
             
             % Save the current figure as a high-resolution PNG
             exportgraphics(fig_handle, snap_full_path, 'Resolution', 300);
-            disp(['Snapshot saved: ' snap_full_path]);
+            disp(['PNG successfully saved: ' snap_full_path]);
             
             % Mark this snapshot as taken to prevent duplicates
             snaps_taken(k) = true;

@@ -27,7 +27,7 @@
 %
 % Author: theArchitectEngineer101
 % Date: 20-Sep-2025
-% Version: 7.0 - Centralized all media exports into a single folder.
+% Version: 7.1 - Centralized all media exports into a single folder.
 
 function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, video_filename, gif_intervals, snap_points)
 
@@ -70,6 +70,8 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
     gifRecorder('reset');
     snapshotRecorder('reset');
 
+    fprintf('\n');
+
     %% Core Computations and Signal Preparation
     conv_vector = conv(x_entry_signal, h_impulse_response);
     x_dim       = length(x_entry_signal);
@@ -80,8 +82,8 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
     if x_dim <= h_dim, shift_factor = h_dim + x_dim + PADDING_SIZE;
     else, shift_factor = x_dim + h_dim + PADDING_SIZE; end
     h_inverted = [zeros(1, PADDING_SIZE + h_dim) h_inverted          zeros(1, PADDING_SIZE + x_dim)];
-    h_padded          = [zeros(1, PADDING_SIZE + h_dim) h_impulse_response  zeros(1, PADDING_SIZE + x_dim)];
-    x_padded          = [zeros(1, PADDING_SIZE + h_dim) x_entry_signal      zeros(1, PADDING_SIZE + h_dim)];
+    h_padded   = [zeros(1, PADDING_SIZE + h_dim) h_impulse_response  zeros(1, PADDING_SIZE + x_dim)];
+    x_padded   = [zeros(1, PADDING_SIZE + h_dim) x_entry_signal      zeros(1, PADDING_SIZE + h_dim)];
 
     % Create the discrete time axis 'n' for plotting
     n = -(h_dim+PADDING_SIZE) : x_dim + h_dim + PADDING_SIZE - 1;
@@ -102,7 +104,7 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
     y_limit_inf_conv  = min([0 conv_vector]);
 
     %% Time Calculation
-    total_iterations = length(n) - h_dim;
+    total_iterations     = length(n) - h_dim;
     total_animation_time = pause_iteration * total_iterations + ...
                            pause_before_inversion + pause_before_shifting + ...
                            pause_after_shifting + pause_finale;
@@ -114,13 +116,13 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
     set(fig, 'Position', [100, 50, 720, 900]); % Set to vertical HD
 
     subplot(4,1,1)
-    stemPloter(n, x_padded, y_limit_inf_entry, y_limit_sup_entry, 'Input Signal: x[n]', 'n', 'Amplitude', 'b');
+                       stemPloter(n, x_padded, y_limit_inf_entry, y_limit_sup_entry,  'Input Signal: x[n]',       'n', 'Amplitude', '#274BDB');
     subplot(4,1,2);
-    h_plot_handle    = stemPloter(n, h_padded, y_limit_inf_resp, y_limit_sup_resp, 'Impulse Response: h[n]', 'n', 'Amplitude', 'b');
+    h_plot_handle    = stemPloter(n, h_padded, y_limit_inf_resp, y_limit_sup_resp,    'Impulse Response: h[n]',   'n', 'Amplitude', '#274BDB');
     subplot(4,1,3);
-    mult_plot_handle = stemPloter(n, mult_factor, y_limit_inf_mult, y_limit_sup_mult, 'Point-wise Product', 'n', 'Amplitude', 'm');
+    mult_plot_handle = stemPloter(n, mult_factor, y_limit_inf_mult, y_limit_sup_mult, 'Point-wise Product',       'n', 'Amplitude', '#00D2D3');
     subplot(4,1,4);
-    conv_plot_handle = stemPloter(n, convolution, y_limit_inf_conv, y_limit_sup_conv, 'Convolution Result: y[n]', 'n', 'Amplitude', 'r');
+    conv_plot_handle = stemPloter(n, convolution, y_limit_inf_conv, y_limit_sup_conv, 'Convolution Result: y[n]', 'n', 'Amplitude', '#FF00A8');
 
     %% Nested Helper for Recording
     function framesRecorder(duration)
@@ -158,7 +160,7 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
 
     % Update h[-n] to h[n-i] (initial position)
     set(h_plot_handle, 'YData', h_shifted);
-    title(subplot(4,1,2), 'Shifted Response: h[n-i]');
+    title(subplot(4,1,2), 'Shifted Response: h[n-k]');
     framesRecorder(pause_after_shifting);
 
     %% Animation loop
@@ -169,7 +171,7 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
         convolution(ii+h_dim) = sum(mult_factor);
 
         % Update plot data using handles
-        set(h_plot_handle, 'YData', h_shifted);
+        set(h_plot_handle,    'YData', h_shifted);
         set(mult_plot_handle, 'YData', mult_factor);
         set(conv_plot_handle, 'YData', convolution);
 
@@ -181,15 +183,17 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
     framesRecorder(pause_finale);
 
     %% Finalize Media
-    if generate_video, close(video_obj); disp(['Video successfully saved: ' video_obj.Filename]); end
+    fprintf('\n');
     if ~isempty(gif_intervals)
          for j = 1:size(gif_intervals, 1)
             gif_base_name = 'animation_interval';
             if generate_video, [~, name, ~] = fileparts(video_filename); gif_base_name = name; end
             gif_name = sprintf('%s_%d.gif', gif_base_name, j);
             full_gif_path = fullfile(output_folder_name, gif_name);
-            disp(['GIF successfully saved:   ' full_gif_path]);
+            disp(['GIF successfully saved: ' full_gif_path]);
          end
     end
-    
+    fprintf('\n');
+    if generate_video, close(video_obj); disp(['MP4 successfully saved: ' video_filename '\' video_obj.Filename]); end
+
 end

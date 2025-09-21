@@ -21,7 +21,7 @@
 function stem_handle = stemPloter(x, y, y_lim_inf, y_lim_sup, plot_title, x_label, y_label, color)
 
     % Create the main stem plot with specified color and line width.
-    stem_handle = stem(x, y, color, 'LineWidth', 2);
+    stem_handle = stem(x, y, 'Color', color, 'LineWidth', 2);
 
     % Set the horizontal axis limits to fit the data perfectly.
     xlim([min(x) max(x)]);
@@ -31,6 +31,7 @@ function stem_handle = stemPloter(x, y, y_lim_inf, y_lim_sup, plot_title, x_labe
 
     % Display the grid for better readability.
     grid on;
+    box on;
 
     % Set the title of the plot.
     title(plot_title);
