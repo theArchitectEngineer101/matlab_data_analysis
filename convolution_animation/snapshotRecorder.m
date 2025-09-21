@@ -4,7 +4,7 @@
 %   own state to ensure each snapshot is taken only once per animation run.
 %
 %   SYNTAX:
-%       snapshotRecorder(fig_handle, base_filename, current_progress, snap_points)
+%       snapshotRecorder(fig_handle, base_filename, current_progress, snap_points, output_folder)
 %       snapshotRecorder('reset')
 %
 %   INPUTS:
@@ -16,10 +16,15 @@
 %                           normalized time in the animation.
 %       snap_points       - A vector of normalized time points (0 to 1) at
 %                           which to save snapshots.
+%       output_folder     - (Optional) String with the path to the folder where
+%                           snapshots will be saved.
 
-function snapshotRecorder(fig_handle, base_filename, current_progress, snap_points)
+function snapshotRecorder(fig_handle, base_filename, current_progress, snap_points, output_folder)
     
     persistent snaps_taken;
+
+    % Handle optional argument for the output folder
+    if nargin < 5, output_folder = ''; end % Default to current directory if not provided
 
     % Handle reset call to clear the state for a new animation
     if ischar(fig_handle) && strcmp(fig_handle, 'reset')
@@ -49,12 +54,13 @@ function snapshotRecorder(fig_handle, base_filename, current_progress, snap_poin
                 snap_base_name = name;
             end
             
-            % Construct the full filename for the snapshot
-            snap_filename = sprintf('%s_snap_%d_pct.png', snap_base_name, round(snap_points(k)*100));
+            % Construct the filename and then the full path
+            snap_filename_only = sprintf('%s_snap_%d_pct.png', snap_base_name, round(snap_points(k)*100));
+            snap_full_path = fullfile(output_folder, snap_filename_only);
             
             % Save the current figure as a high-resolution PNG
-            exportgraphics(fig_handle, snap_filename, 'Resolution', 300);
-            disp(['Snapshot saved: ' snap_filename]);
+            exportgraphics(fig_handle, snap_full_path, 'Resolution', 300);
+            disp(['Snapshot saved: ' snap_full_path]);
             
             % Mark this snapshot as taken to prevent duplicates
             snaps_taken(k) = true;

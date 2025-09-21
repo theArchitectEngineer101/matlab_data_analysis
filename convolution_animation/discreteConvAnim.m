@@ -2,7 +2,7 @@
 %   This function calculates the convolution between two discrete signals
 %   and plots a step-by-step animation. The animation can be saved as a
 %   high-quality MP4 video, animated GIFs of specific intervals, and PNG
-%   snapshots of specific moments.
+%   snapshots of specific moments, all organized into a single output folder.
 %
 % SYNTAX:
 %       conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response)
@@ -27,7 +27,7 @@
 %
 % Author: theArchitectEngineer101
 % Date: 20-Sep-2025
-% Version: 6.0 - Refactored snapshot logic into a dedicated helper function.
+% Version: 7.0 - Centralized all media exports into a single folder.
 
 function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, video_filename, gif_intervals, snap_points)
 
@@ -44,11 +44,22 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
     if nargin < 4, gif_intervals  = []; end
     if nargin < 5, snap_points    = []; end
 
+    % Determine output folder name and create the directory if it doesn't exist
+    if ~isempty(video_filename)
+        [~, output_folder_name, ~] = fileparts(video_filename);
+    else
+        output_folder_name = 'exports';
+    end
+    if ~isfolder(output_folder_name)
+        mkdir(output_folder_name);
+    end
+
     % Video setup
     video_obj = [];
     generate_video = ~isempty(video_filename);
     if generate_video
-        v = VideoWriter(video_filename, 'MPEG-4');
+        full_video_path = fullfile(output_folder_name, video_filename);
+        v = VideoWriter(full_video_path, 'MPEG-4');
         v.FrameRate = 30;
         v.Quality   = 100;
         open(v);
@@ -66,16 +77,11 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
     h_inverted  = flip(h_impulse_response);
 
     % Zero-padding for full animation visibility
-    if x_dim <= h_dim
-        h_inverted   = [zeros(1, PADDING_SIZE + h_dim)  h_inverted          zeros(1, PADDING_SIZE + x_dim)];
-        h_padded     = [zeros(1, PADDING_SIZE + h_dim)  h_impulse_response  zeros(1, PADDING_SIZE + x_dim)];
-        shift_factor = h_dim + x_dim + PADDING_SIZE;
-    else
-        h_inverted   = [zeros(1, PADDING_SIZE + h_dim)  h_inverted          zeros(1, PADDING_SIZE + x_dim)];
-        h_padded     = [zeros(1, PADDING_SIZE + h_dim)  h_impulse_response  zeros(1, PADDING_SIZE + x_dim)];
-        shift_factor = x_dim + h_dim + PADDING_SIZE;
-    end
-    x_padded         = [zeros(1, PADDING_SIZE+h_dim)    x_entry_signal      zeros(1, PADDING_SIZE + h_dim)];
+    if x_dim <= h_dim, shift_factor = h_dim + x_dim + PADDING_SIZE;
+    else, shift_factor = x_dim + h_dim + PADDING_SIZE; end
+    h_inverted = [zeros(1, PADDING_SIZE + h_dim) h_inverted          zeros(1, PADDING_SIZE + x_dim)];
+    h_padded          = [zeros(1, PADDING_SIZE + h_dim) h_impulse_response  zeros(1, PADDING_SIZE + x_dim)];
+    x_padded          = [zeros(1, PADDING_SIZE + h_dim) x_entry_signal      zeros(1, PADDING_SIZE + h_dim)];
 
     % Create the discrete time axis 'n' for plotting
     n = -(h_dim+PADDING_SIZE) : x_dim + h_dim + PADDING_SIZE - 1;
@@ -129,14 +135,15 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
                 if current_progress_time >= gif_intervals(i, 1) && current_progress_time < gif_intervals(i, 2)
                     gif_base_name = 'animation_interval';
                     if generate_video, [~, name, ~] = fileparts(video_filename); gif_base_name = name; end
-                    gifs_to_record_this_frame{end+1} = sprintf('%s_%d', gif_base_name, i);
+                    gif_name = sprintf('%s_%d', gif_base_name, i);
+                    gifs_to_record_this_frame{end+1} = fullfile(output_folder_name, gif_name);
                 end
             end
         end
         gifRecorder(fig, gifs_to_record_this_frame, duration);
         
         % Snapshot Recorder Logic
-        snapshotRecorder(fig, video_filename, current_progress_time, snap_points);
+        snapshotRecorder(fig, video_filename, current_progress_time, snap_points, output_folder_name);
         
         elapsed_time = elapsed_time + duration;
     end  
@@ -174,12 +181,15 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
     framesRecorder(pause_finale);
 
     %% Finalize Media
-    if generate_video, close(video_obj); disp(['Video successfully saved: ' video_filename '.mp4']); end
+    if generate_video, close(video_obj); disp(['Video successfully saved: ' video_obj.Filename]); end
     if ~isempty(gif_intervals)
          for j = 1:size(gif_intervals, 1)
             gif_base_name = 'animation_interval';
             if generate_video, [~, name, ~] = fileparts(video_filename); gif_base_name = name; end
-            disp(['GIF successfully saved:   ' sprintf('%s_%d.gif', gif_base_name, j)]);
+            gif_name = sprintf('%s_%d.gif', gif_base_name, j);
+            full_gif_path = fullfile(output_folder_name, gif_name);
+            disp(['GIF successfully saved:   ' full_gif_path]);
          end
     end
+    
 end
