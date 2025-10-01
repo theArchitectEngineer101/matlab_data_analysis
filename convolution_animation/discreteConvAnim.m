@@ -113,6 +113,8 @@ function conv_vector = discreteConvAnim(x_entry_signal, h_impulse_response, vide
     %% Graphics Initialization
     % Create and configure the main figure window
     fig = figure;
+    set(fig, 'Color', 'w');
+    %set(fig, 'Position', [100, 50, 1080, 900]); % Set to horizontal HD (1280x720)
     set(fig, 'Position', [100, 50, 720, 900]); % Set to vertical HD
 
     subplot(4,1,1)
