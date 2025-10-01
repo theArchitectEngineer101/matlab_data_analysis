@@ -6,7 +6,7 @@ This repository contains a set of MATLAB scripts designed to visually demonstrat
 
 The animation below illustrates the discrete convolution process in action, showing the flipping and shifting of the impulse response, the point-wise multiplication, and the cumulative summation to form the output signal.
 
-*(Suggestion: Record a GIF of your animation and add it here for maximum visual impact.)*
+![Animation of Moving Average Filter](moving_mean_filter.gif)
 
 ## 🚀 Features
 
