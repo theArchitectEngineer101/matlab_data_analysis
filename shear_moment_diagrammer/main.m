@@ -1,4 +1,4 @@
-clc; clear; close all;
+close all;
 
 %% User Inputs & Problem Definition
 % Prompt the user to define the beam's physical properties and loads.
@@ -18,7 +18,7 @@ offsets = []; % Vector for 'a' values
 exponents = []; % Vector for 'n' values
 
 %% Pre-processing: Standardize Operators
-% This step remains crucial. We replace all subtractions with "plus negative"
+% Replace all subtractions with "plus negative"
 % to ensure the sign is correctly associated with its magnitude 'q'.
 % Example: "A - B" becomes "A + -B"
 no_space_str = erase(input_str, whitespacePattern);
@@ -85,7 +85,7 @@ M = zeros(size(x));
 % expression becomes zero.
 singularity = @(x, a, n) (n >= 0) .* (x > a) .* (x - a).^n;
 
-%% 2. Programmatic and Automated Calculation
+%% Programmatic and Automated Calculation
 % This advanced version replaces the switch-case with a universal mathematical
 % rule for singularity function integration, making the code more concise
 % and scalable.
@@ -96,12 +96,7 @@ for i = 1:length(magnitudes)
     a = offsets(i);
     n = exponents(i);
 
-    % --- Contribuição para a CURVA de Carregamento (apenas n >= 0) ---
-    if n >= 0
-        q_plot = q_plot + q * singularity(x, a, n);
-    end
-
-    % --- Universal Integration Rules ---
+    % Universal Integration Rules
     
     % Contribution to Shear (V)
     v_exp = n + 1;
@@ -114,73 +109,52 @@ for i = 1:length(magnitudes)
     M = M + (q / m_den) * singularity(x, a, m_exp);
 end
 
-% --- Bloco de Plotagem Aprimorado ---
 
-% Invertendo a convenção de sinais (conforme seu código)
+
+%% Enhanced Plotting Block
+
+% Inverting the sign convention (as per your code)
 V = -V;
 M = -M;
 
-% Cria o vetor para a linha do eixo zero
+nan_index = find(isnan(V));
+V(nan_index) = V(nan_index - 1);
+
+V(end) = 0; M(end) = 0;
+
+%dyna_padder = @(in_vector) max([abs(min(in_vector)), max(in_vector)]);
+
+% Creates the vector for the zero-axis line
 y = zeros(size(x)); 
 
 figure('Name', 'Beam Analysis Diagrams');
 
-% --- Loading Diagram (q) ---
-subplot(3, 1, 1);
-% Plota a curva das cargas distribuídas
-plot(x, q_plot, 'b', 'LineWidth', 1.5);
-hold on;
-plot(x, y, 'k--');
-grid on;
-title('Loading Diagram');
-ylabel('Load (N)');
-fill([x, fliplr(x)], [q_plot, fliplr(y)], 'b', 'FaceAlpha', 0.3, 'EdgeColor', 'none');
-% Agora, adiciona as forças e momentos concentrados
-for i = 1:length(magnitudes)
-    q = magnitudes(i);
-    a = offsets(i);
-    n = exponents(i);
-    
-    if n == -1 % Força Pontual
-        if q > 0 % Seta para cima
-            plot([a, a], [-0.1*max(abs(ylim)), 0], 'b', 'LineWidth', 1.5);
-            plot(a, -0.1*max(abs(ylim)), 'b^', 'MarkerFaceColor', 'b', 'MarkerSize', 8);
-        else % Seta para baixo
-            plot([a, a], [0.1*max(abs(ylim)), 0], 'r', 'LineWidth', 1.5);
-            plot(a, 0.1*max(abs(ylim)), 'rv', 'MarkerFaceColor', 'r', 'MarkerSize', 8);
-        end
-        text(a, -8, sprintf('%.1f', q), 'HorizontalAlignment', 'center');
-    elseif n == -2 % Momento Concentrado
-        if q > 0 % Anti-horário
-            text(a, 0.1*max(abs(ylim)), '\circlearrowleft', 'Color', 'g', 'FontSize', 16, 'HorizontalAlignment', 'center', 'FontWeight', 'bold', 'Interpreter', 'latex');
-        else % Horário
-            text(a, 0.1*max(abs(ylim)), '\circlearrowright', 'Color', 'g', 'FontSize', 16, 'HorizontalAlignment', 'center', 'FontWeight', 'bold', 'Interpreter', 'latex');
-        end
-        text(a, -0.2*max(abs(ylim)), sprintf('M=%.1f', q), 'HorizontalAlignment', 'center');
-    end
-end
-hold off;
-
 % Shear Force Diagram
-subplot(3, 1, 2);
-plot(x, V, 'm', 'LineWidth', 1.5);
+subplot(2, 1, 1);
+plot(x, V, 'LineWidth', 1.5, 'Color', 'b');
 hold on;
 plot(x, y, 'k--');
 grid on;
+box on;
 title('Shear Force Diagram');
 ylabel('Shear Force (N)');
 xlabel('Position (x)');
-fill([x, fliplr(x)], [V, fliplr(y)], 'm', 'FaceAlpha', 0.3, 'EdgeColor', 'none');
+fill([x, fliplr(x)], [V, fliplr(y)], 'b', 'FaceAlpha', 0.3, 'EdgeColor', 'none');
+xlim([min(x) max(x)]);
+ylim([min(V) max(V)]);
 hold off;
 
 % Bending Moment Diagram
-subplot(3, 1, 3);
-plot(x, M, 'r', 'LineWidth', 1.5); % Cor vermelha para diferenciar
+subplot(2, 1, 2);
+plot(x, M, 'LineWidth', 1.5, 'Color', 'r'); % Red color to differentiate
 hold on;
 plot(x, y, 'k--');
 grid on;
+box on;
 title('Bending Moment Diagram');
 ylabel('Bending Moment (Nm)');
 xlabel('Position (x)');
 fill([x, fliplr(x)], [M, fliplr(y)], 'r', 'FaceAlpha', 0.3, 'EdgeColor', 'none');
+xlim([min(x) max(x)]);
+ylim([min(M) max(M)]);
 hold off;
